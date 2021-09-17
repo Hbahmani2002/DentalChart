@@ -21,9 +21,9 @@ import javafx.scene.control.Button;
 public class App extends Application {
 
     private static Scene scene;
-    public static String ad;
-    public static String soyad;
-    public static String tc;
+    public static String ad="x";
+    public static String soyad="x";
+    public static String tc="x";
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -53,9 +53,11 @@ public class App extends Application {
     }
 
     public static void main(String[] args) {
-        ad=args[0].toString();
-        soyad=args[1].toString();
-        tc=args[2].toString();
+        if(args.length>0) {
+            ad = args[0].toString();
+            soyad = args[1].toString();
+            tc = args[2].toString();
+        }
         launch();
     }
 
