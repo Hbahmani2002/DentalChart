@@ -645,7 +645,7 @@ public class DentalChartController implements Initializable {
         popup.setAutoHide(false);
         
         Scale scale = new Scale();
-        if (job != null && job.showPrintDialog(vbox.getScene().getWindow())) {
+       // if (job != null && job.showPrintDialog(vbox.getScene().getWindow())) {
             popup.show(vbox.getScene().getWindow());
             Printer printer = job.getPrinter();
             ObservableSet<Printer> printers = Printer.getAllPrinters();
@@ -681,7 +681,7 @@ public class DentalChartController implements Initializable {
                 job.endJob();
                 //called even if cancelled the "Save As" dialog
             }
-        }
+     //   }
         vbox.getTransforms().remove(scale);
         vbox.getChildren().remove(label);
         header.setManaged(true);
