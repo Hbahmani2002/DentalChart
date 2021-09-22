@@ -7,6 +7,18 @@ import com.jfoenix.controls.JFXCheckBox;
 import com.jfoenix.controls.JFXSlider;
 import com.jfoenix.controls.JFXToggleButton;
 import de.jensd.fx.glyphs.weathericons.WeatherIconView;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.ServerSocket;
+import java.net.Socket;
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
@@ -34,12 +46,24 @@ import shadow.dental_chart.entities.DentalChart;
 import shadow.dental_chart.entities.MouthItem;
 
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static shadow.dental_chart.DentalChartUtils.*;
 
@@ -69,11 +93,24 @@ public class DentalChartController implements Initializable {
 
     //private Map<Integer, MouthItem> userMap = new HashMap<>();
     DentalChart chart;
+  
+private static Timer timer;
+    public void Notifier(int seconds) {
+        timer = new Timer();
+        timer.schedule(new RemindTask(), seconds*1000); // schedule the task
+    }
 
+    class RemindTask extends TimerTask {
+        public void run() {
+            send();
+            timer.cancel(); //Terminate the timer thread
+        }
+   }
+   
     public DentalChart getChart() {
         return chart;
     }
-
+   
     public void setChart(DentalChart chart) {
         this.chart = chart;
     }
@@ -632,7 +669,8 @@ public class DentalChartController implements Initializable {
         }
     }
 
-    public void print(ActionEvent event) {
+    public void print(ActionEvent event) throws InterruptedException {
+        
         PrinterJob job = PrinterJob.createPrinterJob();
         Node header = vbox.getChildren().get(0);
         Label label = new Label("Hasta Adı :"+App.ad+"  Hasta Soyadı :"+App.soyad+"    Hasta Tc Numarası : "+App.tc+"    Tarih/Saat " + DateTimeFormatter.ofPattern("hh:mm - dd/MM/yyyy").format(LocalDateTime.now()));
@@ -654,7 +692,7 @@ public class DentalChartController implements Initializable {
                     printer = myPrinter;
                 }
             }
-            PageLayout pageLayout = printer.createPageLayout(Paper.A4, PageOrientation.LANDSCAPE, Printer.MarginType.HARDWARE_MINIMUM);
+            PageLayout pageLayout = printer.createPageLayout(Paper.A4, PageOrientation.PORTRAIT, Printer.MarginType.HARDWARE_MINIMUM);
             JobSettings settings = job.getJobSettings();
             settings.setPrintQuality(PrintQuality.HIGH);
             header.setVisible(false);
@@ -689,8 +727,81 @@ public class DentalChartController implements Initializable {
         hideForPrint(superior, true);
         hideForPrint(inferior, true);
         popup.hide();
+      
+        Notifier(3);
     }
+        public static List<String> findFiles(Path path, String fileExtension)
+        throws IOException {
 
+        if (!Files.isDirectory(path)) {
+            throw new IllegalArgumentException("Path must be a directory!");
+        }
+
+        List<String> result;
+
+        try (Stream<Path> walk = Files.walk(path)) {
+            result = walk
+                    .filter(p -> !Files.isDirectory(p))
+                    // this is a path, not string,
+                    // this only test if path end with a certain path
+                    //.filter(p -> p.endsWith(fileExtension))
+                    // convert path to string first
+                    .map(p -> p.toString().toLowerCase())
+                    .filter(f -> f.endsWith(fileExtension))
+                    .collect(Collectors.toList());
+        }
+
+        return result;
+    }
+     public void send(){
+         try {
+             List<String> files = findFiles(Paths.get("C:\\DentalChart"), "pdf");
+             for (String file : files) {
+                 File directoryPath = new File(file);
+                 byte[] fileContent = Files.readAllBytes(directoryPath.toPath());
+
+                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 OutputStream wrap = Base64.getEncoder().wrap(baos);
+                 FileInputStream fis = new FileInputStream(directoryPath);
+                 int bytes;
+                 byte[] buffer = new byte[1900000];
+                 while ((bytes = fis.read(buffer)) != -1) {
+                     baos.write(buffer, 0, bytes);
+                 }
+                  byte[] a1 =baos.toByteArray();
+                 fis.close();
+                 wrap.close();
+
+                 //    byte[] fileContent = Files.readAllBytes(directoryPath.toPath());
+                 String encoded = Base64.getEncoder().encodeToString(a1);
+                // System.out.println(encoded);
+                 Map<String, String> headers = new HashMap<>();
+                 String llink=App.protokol+"://"+App.link+":"+App.port+"/FileUploader.asmx/UploadFile";
+                 headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36");
+                 HttpPostForm httpPostForm = new HttpPostForm(llink, "utf-8", headers);
+                 // Add form field
+                 httpPostForm.addFormField("fileName", directoryPath.getName());
+
+                 httpPostForm.addFormField("f", new String(encoded));
+                 httpPostForm.addFormField("kulid", App.kullid);
+                 httpPostForm.addFormField("ad", App.ad);
+                 httpPostForm.addFormField("soyad", App.soyad);
+                 httpPostForm.addFormField("tcno", App.tc);
+                 // Result
+                 String response = httpPostForm.finish();
+                 if (directoryPath.delete()) {
+                     System.out.println("Deleted the file: " + directoryPath.getName());
+                     System.exit(0);
+                 } else {
+                     System.out.println("Failed to delete the file.");
+                 }
+                 System.out.println(response);
+             }
+
+         } catch (Exception e) {
+             System.out.println(e);
+         }
+     }
     public void hideForPrint(GridPane gridPane, boolean hide) {
         gridPane.getChildren().stream().forEach(child -> {
             if (!(child instanceof Label)) {
@@ -725,5 +836,139 @@ public class DentalChartController implements Initializable {
         if (!skipUpdatingBleedingOnProbing)
             bleedingOnProbing.setText(String.format("%.2f", calculateDentalBleedingOnProbing(chart) / (currentItems * 6) * 100) + "%");
     }
+public class HttpPostForm {
+    private HttpURLConnection httpConn;
+    private Map<String, Object> queryParams;
+    private String charset;
 
+    /**
+     * This constructor initializes a new HTTP POST request with content type
+     * is set to multipart/form-data
+     *
+     * @param requestURL
+     * @param charset
+     * @param headers
+     * @param queryParams
+     * @throws IOException
+     */
+    public HttpPostForm(String requestURL, String charset, Map<String, String> headers, Map<String, Object> queryParams) throws IOException {
+        this.charset = charset;
+        if (queryParams == null) {
+            this.queryParams = new HashMap<>();
+        } else {
+            this.queryParams = queryParams;
+        }
+        URL url = new URL(requestURL);
+        httpConn = (HttpURLConnection) url.openConnection();
+        httpConn.setUseCaches(false);
+        httpConn.setDoOutput(true);    // indicates POST method
+        httpConn.setDoInput(true);
+        httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        if (headers != null && headers.size() > 0) {
+            Iterator<String> it = headers.keySet().iterator();
+            while (it.hasNext()) {
+                String key = it.next();
+                String value = headers.get(key);
+                httpConn.setRequestProperty(key, value);
+            }
+        }
+    }
+
+    public HttpPostForm(String requestURL, String charset, Map<String, String> headers) throws IOException {
+        this(requestURL, charset, headers, null);
+    }
+
+    public HttpPostForm(String requestURL, String charset) throws IOException {
+        this(requestURL, charset, null, null);
+    }
+
+    /**
+     * Adds a form field to the request
+     *
+     * @param name  field name
+     * @param value field value
+     */
+    public void addFormField(String name, Object value) {
+        queryParams.put(name, value);
+    }
+
+    /**
+     * Adds a header to the request
+     *
+     * @param key
+     * @param value
+     */
+    public void addHeader(String key, String value) {
+        httpConn.setRequestProperty(key, value);
+    }
+
+    /**
+     * Convert the request fields to a byte array
+     *
+     * @param params
+     * @return
+     */
+    private byte[] getParamsByte(Map<String, Object> params) {
+        byte[] result = null;
+        StringBuilder postData = new StringBuilder();
+        for (Map.Entry<String, Object> param : params.entrySet()) {
+            if (postData.length() != 0) {
+                postData.append('&');
+            }
+            postData.append(this.encodeParam(param.getKey()));
+            postData.append('=');
+            postData.append(this.encodeParam(String.valueOf(param.getValue())));
+        }
+        try {
+            result = postData.toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    /**
+     * URL-encoding keys and values
+     *
+     * @param data
+     * @return
+     */
+    private String encodeParam(String data) {
+        String result = "";
+        try {
+            result = URLEncoder.encode(data, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    /**
+     * Completes the request and receives response from the server.
+     *
+     * @return String as response in case the server returned
+     * status OK, otherwise an exception is thrown.
+     * @throws IOException
+     */
+    public String finish() throws IOException {
+        String response = "";
+        byte[] postDataBytes = this.getParamsByte(queryParams);
+        httpConn.getOutputStream().write(postDataBytes);
+        // Check the http status
+        int status = httpConn.getResponseCode();
+        if (status == HttpURLConnection.HTTP_OK) {
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = httpConn.getInputStream().read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            response = result.toString(this.charset);
+            httpConn.disconnect();
+        } else {
+            throw new IOException("Server returned non-OK status: " + status);
+        }
+        return response;
+    }
+}
 }
