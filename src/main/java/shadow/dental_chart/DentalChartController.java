@@ -713,7 +713,6 @@ private static Timer timer;
             scale = new Scale(scaleX, scaleY);
 
             vbox.getTransforms().add(scale);
-
             boolean success = job.printPage(pageLayout, vbox);
             if (success) {
                 job.endJob();
