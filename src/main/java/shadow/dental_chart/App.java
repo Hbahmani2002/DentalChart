@@ -22,6 +22,9 @@ import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
 import java.util.Base64;
 import java.util.Date;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 
 /**
@@ -93,6 +96,7 @@ String decodedString = new String(decodedBytes);
 }
 catch (Exception ex)
 {
+    showAlert(ex.getMessage());
 
     FileWriter fileWriter = new FileWriter("c:\\DentalChart\\Error.txt");
     PrintWriter printWriter = new PrintWriter(fileWriter);
@@ -101,9 +105,31 @@ Date date = new Date(System.currentTimeMillis());
 
     printWriter.print(date+" : "+ ex.getMessage());
     printWriter.close();
-    System.exit(0);
+   // System.exit(0);
 }
     }
+    public static void showAlert(String message) {
+    Platform.startup(new Runnable() {
+      public void run() {
+          Alert alert = new Alert(Alert.AlertType.ERROR);
+          alert.setTitle("Hata...");
+          alert.setHeaderText("Bu hata ilk Açılış hatası");
+          alert.setContentText(message);
+          alert.show();
+      }
+    });
+    }
+      public static void showAlertOut(String message) {
+    Platform.runLater(new Runnable() {
+      public void run() {
+          Alert alert = new Alert(Alert.AlertType.ERROR);
+          alert.setTitle("Hata...");
+          alert.setHeaderText("Bu hata Servis Bağlantı Hatasi");
+          alert.setContentText(message);
+          alert.showAndWait();
+      }
+    });
+}
     public static boolean containsChar(String s, char search) {
     if (s.length() == 0)
         return false;

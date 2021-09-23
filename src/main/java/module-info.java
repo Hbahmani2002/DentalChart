@@ -13,4 +13,5 @@ module shadow.dental_chart {
     opens shadow.dental_chart to javafx.fxml;
     exports shadow.dental_chart;
     exports shadow.dental_chart.entities;
+
 }

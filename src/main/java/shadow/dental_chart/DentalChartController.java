@@ -62,6 +62,8 @@ import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,7 +92,7 @@ public class DentalChartController implements Initializable {
 
     private static final List<Integer> fork_1_Eligable = Arrays.asList(1, 2, 3, 15, 16, 17);
     private static final List<Integer> fork_2_3_Eligable = Arrays.asList(1, 2, 3, 5, 13, 15, 16, 17);
-
+    private static File delfile=null;
     //private Map<Integer, MouthItem> userMap = new HashMap<>();
     DentalChart chart;
   
@@ -102,7 +104,11 @@ private static Timer timer;
 
     class RemindTask extends TimerTask {
         public void run() {
-            send();
+            try {
+                send();
+            } catch (InterruptedException ex) {
+               ex.getStackTrace();
+            }
             timer.cancel(); //Terminate the timer thread
         }
    }
@@ -123,6 +129,19 @@ private static Timer timer;
         try {
             setChart(objectMapper.readValue(s, DentalChart.class));
         } catch (JsonProcessingException e) {
+            
+             App.showAlertOut(e.getMessage());
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch (InterruptedException ex) {
+                ex.getStackTrace();
+            }
+              if (delfile.delete()) {
+                     System.out.println("Deleted the file: " + delfile.getName());
+                     System.exit(0);
+                 } else {
+                     System.out.println("Failed to delete the file.");
+                 }
             e.printStackTrace();
         }
 
@@ -752,11 +771,12 @@ private static Timer timer;
 
         return result;
     }
-     public void send(){
+     public void send() throws InterruptedException{
          try {
              List<String> files = findFiles(Paths.get("C:\\DentalChart"), "pdf");
              for (String file : files) {
                  File directoryPath = new File(file);
+                 delfile=directoryPath;
                  byte[] fileContent = Files.readAllBytes(directoryPath.toPath());
 
                  ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -798,6 +818,15 @@ private static Timer timer;
              }
 
          } catch (Exception e) {
+             
+             App.showAlertOut(e.getMessage());
+             TimeUnit.SECONDS.sleep(2);
+              if (delfile.delete()) {
+                     System.out.println("Deleted the file: " + delfile.getName());
+                     System.exit(0);
+                 } else {
+                     System.out.println("Failed to delete the file.");
+                 }
              System.out.println(e);
          }
      }
@@ -907,7 +936,7 @@ public class HttpPostForm {
      * @param params
      * @return
      */
-    private byte[] getParamsByte(Map<String, Object> params) {
+    private byte[] getParamsByte(Map<String, Object> params) throws InterruptedException {
         byte[] result = null;
         StringBuilder postData = new StringBuilder();
         for (Map.Entry<String, Object> param : params.entrySet()) {
@@ -921,6 +950,15 @@ public class HttpPostForm {
         try {
             result = postData.toString().getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
+            
+            App.showAlertOut(e.getMessage());
+            TimeUnit.SECONDS.sleep(2);
+             if (delfile.delete()) {
+                     System.out.println("Deleted the file: " + delfile.getName());
+                     System.exit(0);
+                 } else {
+                     System.out.println("Failed to delete the file.");
+                 }
             e.printStackTrace();
         }
         return result;
@@ -932,11 +970,20 @@ public class HttpPostForm {
      * @param data
      * @return
      */
-    private String encodeParam(String data) {
+    private String encodeParam(String data) throws InterruptedException {
         String result = "";
         try {
             result = URLEncoder.encode(data, "UTF-8");
         } catch (UnsupportedEncodingException e) {
+             
+             App.showAlertOut(e.getMessage());
+             TimeUnit.SECONDS.sleep(2);
+             if (delfile.delete()) {
+                     System.out.println("Deleted the file: " + delfile.getName());
+                     System.exit(0);
+                 } else {
+                     System.out.println("Failed to delete the file.");
+                 }
             e.printStackTrace();
         }
         return result;
@@ -949,7 +996,7 @@ public class HttpPostForm {
      * status OK, otherwise an exception is thrown.
      * @throws IOException
      */
-    public String finish() throws IOException {
+    public String finish() throws IOException, InterruptedException {
         String response = "";
         byte[] postDataBytes = this.getParamsByte(queryParams);
         httpConn.getOutputStream().write(postDataBytes);
@@ -969,5 +1016,5 @@ public class HttpPostForm {
         }
         return response;
     }
-}
+    }
 }
