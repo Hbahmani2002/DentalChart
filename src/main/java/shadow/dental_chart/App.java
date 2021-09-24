@@ -16,16 +16,11 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.time.DateTimeException;
 import java.util.Base64;
 import java.util.Date;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Button;
 
 /**
  * JavaFX App
@@ -74,7 +69,8 @@ public class App extends Application {
             if (args.length > 0) {
                 if (args[0].length() > 15) {
                     String gelenstr = args[0].substring(args[0].lastIndexOf("//") + 2);
-                    if (containsChar(gelenstr, '/')) {
+                    String last=gelenstr.substring(gelenstr.length()-1);
+                    if ("/".equals(last)) {
                         gelenstr = gelenstr.substring(0, gelenstr.indexOf('/'));
                     }
                     byte[] decodedBytes = Base64.getDecoder().decode(gelenstr);
@@ -96,38 +92,33 @@ public class App extends Application {
             showAlert(ex.getMessage());
 
             FileWriter fileWriter = new FileWriter("c:\\DentalChart\\Error.txt");
-            PrintWriter printWriter = new PrintWriter(fileWriter);
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
-            Date date = new Date(System.currentTimeMillis());
-
-            printWriter.print(date + " : " + ex.getMessage());
-            printWriter.close();
-            // System.exit(0);
+            try (PrintWriter printWriter = new PrintWriter(fileWriter)) {
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+                Date date = new Date(System.currentTimeMillis());
+                printWriter.print(date + " : " + ex.getMessage());
+                // System.exit(0);
+            }
         }
     }
 
     public static void showAlert(String message) {
-        Platform.startup(new Runnable() {
-            public void run() {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Hata...");
-                alert.setHeaderText("Bu hata ilk Açılış hatası");
-                alert.setContentText(message);
-                
-                alert.show();
-            }
+        Platform.startup(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Hata...");
+            alert.setHeaderText("Bu hata ilk Açılış hatası");
+            alert.setContentText(message);
+            
+            alert.show();
         });
     }
 
     public static void showAlertOut(String message) {
-        Platform.runLater(new Runnable() {
-            public void run() {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Hata...");
-                alert.setHeaderText("Bu hata Servis Bağlantı Hatasi");
-                alert.setContentText(message);
-                alert.showAndWait();
-            }
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Hata...");
+            alert.setHeaderText("Bu hata Servis Bağlantı Hatasi");
+            alert.setContentText(message);
+            alert.showAndWait();
         });
     }
 

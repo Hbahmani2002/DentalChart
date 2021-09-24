@@ -142,7 +142,6 @@ private static Timer timer;
                  } else {
                      System.out.println("Failed to delete the file.");
                  }
-            e.printStackTrace();
         }
 
         Platform.runLater(() -> {
@@ -780,16 +779,14 @@ private static Timer timer;
                  byte[] fileContent = Files.readAllBytes(directoryPath.toPath());
 
                  ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                 OutputStream wrap = Base64.getEncoder().wrap(baos);
-                 FileInputStream fis = new FileInputStream(directoryPath);
-                 int bytes;
-                 byte[] buffer = new byte[1900000];
-                 while ((bytes = fis.read(buffer)) != -1) {
-                     baos.write(buffer, 0, bytes);
+                 byte[] a1;
+                 try (OutputStream wrap = Base64.getEncoder().wrap(baos); FileInputStream fis = new FileInputStream(directoryPath)) {
+                     int bytes;
+                     byte[] buffer = new byte[1900000];
+                     while ((bytes = fis.read(buffer)) != -1) {
+                         baos.write(buffer, 0, bytes);
+                     }   a1 = baos.toByteArray();
                  }
-                  byte[] a1 =baos.toByteArray();
-                 fis.close();
-                 wrap.close();
 
                  //    byte[] fileContent = Files.readAllBytes(directoryPath.toPath());
                  String encoded = Base64.getEncoder().encodeToString(a1);
@@ -817,7 +814,7 @@ private static Timer timer;
                  System.out.println(response);
              }
 
-         } catch (Exception e) {
+         } catch (IOException | InterruptedException e) {
              
              App.showAlertOut(e.getMessage());
              TimeUnit.SECONDS.sleep(2);
@@ -959,7 +956,6 @@ public class HttpPostForm {
                  } else {
                      System.out.println("Failed to delete the file.");
                  }
-            e.printStackTrace();
         }
         return result;
     }
@@ -984,7 +980,6 @@ public class HttpPostForm {
                  } else {
                      System.out.println("Failed to delete the file.");
                  }
-            e.printStackTrace();
         }
         return result;
     }
@@ -995,6 +990,7 @@ public class HttpPostForm {
      * @return String as response in case the server returned
      * status OK, otherwise an exception is thrown.
      * @throws IOException
+         * @throws java.lang.InterruptedException
      */
     public String finish() throws IOException, InterruptedException {
         String response = "";
