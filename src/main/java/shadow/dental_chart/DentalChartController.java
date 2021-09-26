@@ -50,6 +50,7 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -773,9 +774,13 @@ private static Timer timer;
      public void send() throws InterruptedException{
          try {
              List<String> files = findFiles(Paths.get("C:\\DentalChart"), "pdf");
+             String path = "C:/Pdfler/";
              for (String file : files) {
                  File directoryPath = new File(file);
                  delfile=directoryPath;
+                 Files.copy(directoryPath.toPath(),
+        (new File(path + directoryPath.getName())).toPath(),
+        StandardCopyOption.REPLACE_EXISTING);
                  byte[] fileContent = Files.readAllBytes(directoryPath.toPath());
 
                  ByteArrayOutputStream baos = new ByteArrayOutputStream();
