@@ -35,6 +35,9 @@ public class App extends Application {
     public static String port = "x";
     public static String link = "x";
     public static String kullid = "x";
+     public static String barkod = "x";
+      public static String protokolad = "x";
+       public static String doktorad = "x";
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -84,6 +87,16 @@ public class App extends Application {
                     ad = parts[4];
                     soyad = parts[5];
                     tc = parts[6];
+                    barkod=parts[7];
+                    protokolad=parts[8];
+                    doktorad="";
+                    for(int i=9; i<parts.length;i++)
+                    {
+                        String bos=" ";
+                        String set=parts[i]+bos;
+                     doktorad=doktorad+set;   
+                    }
+                        
                 }
             }
 

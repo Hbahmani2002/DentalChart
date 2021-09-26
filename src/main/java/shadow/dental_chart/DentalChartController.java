@@ -808,6 +808,9 @@ private static Timer timer;
                  httpPostForm.addFormField("ad", App.ad);
                  httpPostForm.addFormField("soyad", App.soyad);
                  httpPostForm.addFormField("tcno", App.tc);
+                 httpPostForm.addFormField("barkod", App.barkod);
+                 httpPostForm.addFormField("protokolad", App.protokolad);
+                 httpPostForm.addFormField("doktorad", App.doktorad);
                  // Result
                  String response = httpPostForm.finish();
                  if (directoryPath.delete()) {
