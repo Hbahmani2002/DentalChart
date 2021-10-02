@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javafx.stage.Window;
 
 import static shadow.dental_chart.DentalChartUtils.*;
 
@@ -705,12 +706,14 @@ private static Timer timer;
        // if (job != null && job.showPrintDialog(vbox.getScene().getWindow())) {
             popup.show(vbox.getScene().getWindow());
             Printer printer = job.getPrinter();
-            ObservableSet<Printer> printers = Printer.getAllPrinters();
+            
+         /*   ObservableSet<Printer> printers = Printer.getAllPrinters();
             for(Printer myPrinter : printers){
-                if(printer.getName().matches("Printer Microsoft Print to PDF")){
+                if(myPrinter.getName().matches("Microsoft Print to PDF")){
                     printer = myPrinter;
                 }
-            }
+            }*/
+          
             PageLayout pageLayout = printer.createPageLayout(Paper.A4, PageOrientation.PORTRAIT, Printer.MarginType.HARDWARE_MINIMUM);
             JobSettings settings = job.getJobSettings();
             settings.setPrintQuality(PrintQuality.HIGH);
@@ -732,6 +735,9 @@ private static Timer timer;
             scale = new Scale(scaleX, scaleY);
 
             vbox.getTransforms().add(scale);
+            Window window=null;
+             job.showPrintDialog(window); 
+             
             boolean success = job.printPage(pageLayout, vbox);
             if (success) {
                 job.endJob();
